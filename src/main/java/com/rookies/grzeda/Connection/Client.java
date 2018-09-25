@@ -18,8 +18,8 @@ public class Client implements Runnable {
 	public DataReadyEventListener eventListener;
 	public Socket socket;
 	
-	ObjectInputStream inFromClient;
-	ObjectOutputStream outToClient;
+	public ObjectInputStream inFromClient;
+	public ObjectOutputStream outToClient;
 	
 	private static final Logger LOGGER = Logger.getLogger(Client.class.getName());
 	
@@ -28,7 +28,7 @@ public class Client implements Runnable {
 		LOGGER.log(Level.INFO, "run(): Entry");
 		
 		try {
-			inFromClient = new ObjectInputStream(socket.getInputStream());
+			//inFromClient = new ObjectInputStream(socket.getInputStream());
 			outToClient = new ObjectOutputStream(socket.getOutputStream());
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -37,9 +37,9 @@ public class Client implements Runnable {
 		LOGGER.log(Level.INFO, "run(): Entering receiving loop");
 
 		while (socket.isConnected()) {
-            Message inMsg = null;
+			ChatMessage inMsg = null;
 			try {
-				inMsg = (Message)inFromClient.readObject();
+				inMsg = (ChatMessage)inFromClient.readObject();
 			} catch (ClassNotFoundException e) {
 				e.printStackTrace();
 			} catch (IOException e) {
@@ -58,9 +58,13 @@ public class Client implements Runnable {
 		LOGGER.log(Level.INFO, "run(): Exit");
 	}
 	
-	public void sendMessage(Message msg) throws IOException {
+	public void sendMessage(Message msg) {
 		LOGGER.log(Level.INFO, "sendMessage(): Entry");
-		outToClient.writeObject(msg);
+		try {
+			outToClient.writeObject(msg);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 		LOGGER.log(Level.INFO, "sendMessage(): Exit");
 	}
 }
