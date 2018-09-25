@@ -1,5 +1,6 @@
 package com.rookies.grzeda.Connection;
 
+import java.awt.TrayIcon.MessageType;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.net.ServerSocket;
@@ -48,6 +49,22 @@ public class Server {
             	
     			Client client = new Client();
     			client.socket = clientSocket;
+    			client.inFromClient = inFromClient;
+    			
+    			client.eventListener = new DataReadyEventListener() {
+					
+					@Override
+					public void event(Message message) {
+						Table table = tables.get(message.tableNo);
+						if (table != null) {
+							if (message.type == Message.Type.chat) {
+								for (Client client : table.clients) {
+									client.sendMessage(message);
+								}
+							}
+						}
+					}
+				};
     			
     			Table table = tables.get(inMsg.tableNo);
     			
