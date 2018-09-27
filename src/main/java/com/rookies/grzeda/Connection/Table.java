@@ -13,8 +13,8 @@ public class Table {
 	}
 	
 	void addClient(Client client) {
-		client.eventListener = new DataReadyEventListener() {
-			public void event(Message message) {
+		client.eventListener = new ClientEventListener() {
+			public void eventDataReady(Message message) {
 				for (Client client : clients) {
 					try {
 						client.sendMessage(message);

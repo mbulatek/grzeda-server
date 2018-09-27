@@ -35,49 +35,56 @@ public class Server {
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
-			System.out.println("Socket connected");
+			
+			LOGGER.log(Level.INFO, "listen(): Socket connected");
 
-			
-			ObjectInputStream inFromClient = new ObjectInputStream(clientSocket.getInputStream());
-			
-			Message inMsg = null;
-            inMsg = (Message)inFromClient.readObject();
-            
-            if (inMsg.type == Message.Type.initial)
-            {
-            	LOGGER.log(Level.INFO, "listen(): Initial message received");
-            	
-    			Client client = new Client();
-    			client.socket = clientSocket;
-    			client.inFromClient = inFromClient;
-    			
-    			client.eventListener = new DataReadyEventListener() {
-					
-					@Override
-					public void event(Message message) {
-						Table table = tables.get(message.tableNo);
-						if (table != null) {
-							if (message.type == Message.Type.chat) {
-								for (Client client : table.clients) {
-									client.sendMessage(message);
-								}
+			Client client = new Client(clientSocket);
+			client.eventListener = new ClientEventListener() {
+				@Override
+				public void eventDataReady(ClientEventListener.Event event) {
+					LOGGER.log(Level.INFO, "listen(): DataReady handling");
+					Table table = tables.get(event.message.tableNo);
+					if (table != null) {
+						if (event.message.type == Message.Type.chat) {
+							for (Client client : table.clients) {
+								client.sendMessage(event.message);
 							}
 						}
 					}
-				};
-    			
-    			Table table = tables.get(inMsg.tableNo);
-    			
-    			if (table == null) {
-    				table = new Table();
-    				table.clients.add(client);
-    				tables.put(inMsg.tableNo, table);
-    			} else {
-    				table.clients.add(client);
-    			}
+				}
+				
+				@Override
+				public void eventTableAssigned(ClientEventListener.Event event) {
+					LOGGER.log(Level.INFO, "listen(): TableAssigned handling");
+	    			Table table = tables.get(event.message.tableNo);
+	    			
+	    			if (table == null) {
+	    				table = new Table();
+	    				table.clients.add(event.source);
+	    				tables.put(event.message.tableNo, table);
+	    			} else {
+	    				table.clients.add(event.source);
+	    			}
+				}
 
-    			new Thread(client).start();
-            }
+				@Override
+				public void eventTableDisassigned(ClientEventListener.Event event) {
+					LOGGER.log(Level.INFO, "listen(): TableAssigned handling");
+	    			Table table = tables.get(event.message.tableNo);
+
+	    			if (table != null) {
+	    				table.clients.remove(event.source);
+	    			}
+				}
+
+				@Override
+				public void eventDisconnected(ClientEventListener.Event event) {
+					LOGGER.log(Level.INFO, "listen(): Disconnected handling");
+				}
+			};
+			
+			new Thread(client).start();
+			LOGGER.log(Level.INFO, "listen(): Client started");
 		}
 	}
 }
